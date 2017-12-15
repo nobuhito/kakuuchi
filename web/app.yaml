@@ -1,0 +1,24 @@
+runtime: go
+api_version: go1
+
+handlers:
+- url: /css
+  static_dir: static/css
+- url: /js
+  static_dir: static/js
+- url: /favicon\.png
+  static_files: favicon.png
+  upload: favicon.png
+- url: /index\.html
+  static_files: static/index.html
+  upload: static/index.html
+- url: /
+  static_files: static/index.html
+  upload: static/index.html
+- url: /cron/.*
+  script: _go_app
+  secure: always
+  login: admin
+- url: /.*
+  script: _go_app
+  secure: always

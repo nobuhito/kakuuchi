@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <title>KAKUUCHI</title>
+    <script src="https://www.gstatic.com/firebasejs/4.8.0/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.8.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.19.3/moment.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.min.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/script.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-111259514-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'UA-111259514-1');
+    </script>
+</head>
+
+<body>
+    <div id="app" class="container" @click="isOpenMessageOption=null" style="display:none">
+        <div class="navwrap">
+            <nav class="navbar level wrap is-mobile" role="navigation" area-label="main navigation">
+                <div class="level-left">
+                    <div class="level-item">
+                        <a class="button" @click="toggleSidebar">
+                            <span class="icon is-large">
+                                <i class="fa fa-bars"></i>
+                            </span>
+                        </a>
+                    </div>
+                    <div class="level-item is-mobile">
+                        <h1 :class="bulma.isMobile? 'is-size-5': 'is-size-3'">
+                            <a href="/" style="text-decoration: none;color: black">角打ち</a>
+                        </h1>
+                    </div>
+                </div>
+
+                <div class="level-right">
+                    <div class="level-items">
+                        <div v-if="user == null" class="level-item">
+                            <a class="button" @click="login">ログイン</a>
+                        </div>
+                        <div v-else class="level-item is-mobile">
+                            <a @click="logoutAlert">
+                                <figure class="image is-24x24">
+                                    <img :src="user.photoURL" class="avater-24">
+                                </figure>
+                            </a>
+                            <a class="button is-text is-hidden-mobile" @click="logout">ログアウト</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div style="height:60px"></div>
+        <div class="wrap main">
+            <div class="columns">
+                <aside class="menu column sidebar is-narrow" v-show="isOpenSidebar" :style="bulma.isMobile? 'width:100vw': ''">
+                    <p class="menu-label">
+                        <div class="has-text-2">
+                            <strong>カウンター</strong>
+                        </div>
+                    </p>
+                    <div class="field" v-if="user != null">
+                        <button class="button" @click="openModal">新規カウンター作成</button>
+                    </div>
+                    <div v-if="counters.length == 0">
+                        <i class="fa fa-spinner fa-spin fa-3x fa-fw"></i>
+                        <div>精魂込めて仕込み中...</div>
+                    </div>
+                    <ul class="menu-list">
+                        <li v-for="counter in counters" :key="counter.id">
+                            <a href="#" @click="selectCounter(counter.id)" :class="(counter.id == selectedCounterID)? 'is-active': ''">{{ counter.name }}</a>
+                        </li>
+                    </ul>
+                </aside>
+                <div class="column messages wrap">
+                    <div v-if="selectedCounterID == ''" class="content">
+
+                        <div v-if="topPage==0">
+
+                            <p>
+                                角打ちは2chのような古き良き掲示板を今時の技術や環境で再現しようとしているプロジェクトです。
+                                <br>出来るだけシンプルに楽な感じで利用できる場所を目指しています。
+                            </p>
+                            <p>
+                                初めての方はこちらの掲示板をどうぞ →
+                                <a class="button is-text" @click="selectCounter(sandboxID)">Sandbox</a>
+                            </p>
+
+                            <div class="has-text-centered">
+                                <a class="button is-text" @click="topPage=1">About</a>
+                                <a class="button is-text" @click="topPage=2">FAQ</a>
+                                <a class="button is-text" @click="topPage=3">Privacy</a>
+                            </div>
+                            <hr class="hr">
+                            <div class="field has-addons">
+                                <div class="control">
+                                    <input class="input" type="text" placeholder="検索文字列" v-model="searchWord">
+                                </div>
+                                <div class="control">
+                                    <a class="button is-info" @click="search()">
+                                        検索
+                                    </a>
+                                </div>
+                                <div class="control">
+                                    <a class="button is-text" @click="searchReset()">
+                                        リセット
+                                    </a>
+                                </div>
+                            </div>
+                            <h3>最近利用したカウンター</h3>
+                            <div class="buttons">
+                                <span v-for="(counter, i) in counters" v-if="isShowCounter(counter, true)">
+                                    <a class="button is-text" @click="selectCounter(counter.id)">{{ counter.name }}</a>
+                                </span>
+                            </div>
+
+                            <h3>その他のカウンター</h3>
+                            <div class="buttons">
+                                <span v-for="(counter, i) in counters" v-if="isShowCounter(counter, false)">
+                                    <a class="button is-text" @click="selectCounter(counter.id)">{{ counter.name }}</a>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div v-if="topPage==1">
+                            <div>
+                                <button class="button" @click="topPage=0">
+                                    <span class="icon">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </span>
+                                    <span>トップへ戻る</span>
+                                </button>
+                            </div>
+                            <h1>角打ち</h1>
+                            <p>
+                                そこは様々な人が寂しさをかかえて集まる場所。
+                                <br> 隣で呑んでる人がどういう人生を送ってきたなんて関係なし。
+                                <br> 楽しい時間を適当に過ごせればそれでエブリシングオッケー。
+                            </p>
+                            <p>
+                                フォローもブロックもありません。ミュート機能はありますが、次の日になると自動的に解除されます。
+                                <br> 今日はちょっとウザいなと思っても、明日になると案外仲直り出来るかもしれませんよ。
+                            </p>
+                            <p> もしあいつがいる店には行きたくないということであれば、新しいカウンターを作ることもできます。
+                                <br> でも、そのカウンターにもあいつはやってくるかもしれません。現実もそんなもんでしょ？。
+                            </p>
+
+                            <h2>機能説明 </h2>
+                            <p>
+                                <dl>
+                                    <dt>出来ないこと</dt>
+                                    <dd>ユーザーのフォロー、ユーザーのブロック、いいね、1000件以上の書き込み、API等による自動投稿、プッシュ通知、未読管理</dd>
+                                    <dt>出来ること</dt>
+                                    <dd>新しいカウンターの作成、プライベートカウンターの作成、一晩限りのミュート、書き込んでるユーザーの一覧表示、投稿内容の全文検索、投稿内容のリアルタイム表示、投稿があったカウンターの優先表示</dd>
+                                </dl>
+                            </p>
+                            <p>
+
+                            </p>
+
+                            <h2>技術的なこと</h2>
+                            <p>
+                                本サービスの主要部分はFirestoreとVue.jsの組み合わせで動いています。
+                                <br>他に、ログイン処理周りはFirebase、HTML関係のホスティングとバッチ処理(アーカイブ化と全文検索用インデックス作成)についてはGAEのGo環境で稼働しています。
+                            </p>
+                            <p>
+                                ソースもGitLabで公開予定です。
+                            </p>
+                        </div>
+                        <div v-if="topPage==2">
+                            <div>
+                                <button class="button" @click="topPage=0">
+                                    <span class="icon">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </span>
+                                    <span>トップへ戻る</span>
+                                </button>
+                            </div>
+                            <p>
+                                <dl>
+                                    <dt>投稿できない</dt>
+                                    <dd>ログインしてください</dd>
+                                </dl>
+                            </p>
+                        </div>
+
+                        <div v-if="topPage==3">
+                            <div>
+                                <button class="button" @click="topPage=0">
+                                    <span class="icon">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </span>
+                                    <span>トップへ戻る</span>
+                                </button>
+                            </div>
+                            <h3>ユーザー情報の取得について</h3>
+                            <p>
+                                各ユーザーについてはメールアドレスで識別しており、ユーザー名と合わせてGoogleのユーザー情報を利用しています。
+                                <br>本サービス以外にそれらの情報を使うことはありませんが、気持ち悪い場合には専用アカウントを取得してご利用ください。
+                            </p>
+                            <h3>利用状況の取得について</h3>
+                            <p>
+                                また、利用状況把握のためにGoogleAnalyticsを利用して情報を取得しています。
+                                <br>こちらについても、気持ち悪い場合は専用ツールで遮断してください。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="counter-info" v-if="selectedCounterID != ''">
+                        <h1 class="title" :class="isShowMessageInfo? 'is-size-2': 'is-size-4'">{{ counter.name }}</h1>
+                        <h2 class="subtitle" v-if="isShowMessageInfo">{{ counter.description }}</h2>
+                        <div class="has-text-right" v-if="isShowMessageInfo">
+                            <div>
+                                <strong>オーナー:</strong> {{ counter.owner.displayName }}
+                            </div>
+                            <div>
+                                <strong>最新データ:</strong> {{ moment(counter.lastUpdated).fromNow() }}
+                            </div>
+                        </div>
+                        <div class="tags">
+                            <figure v-for="(image, i) in participantImages" :key="i" class="image" :class="isShowMessageInfo? 'is-32x32': 'is-24x24'">
+                                <img :src="image" :class="isShowMessageInfo? 'avater-32': 'avater-24'">
+                            </figure>
+                        </div>
+                        <hr class="hr">
+                    </div>
+                    <div class="counter-main" :id="'#' + selectedCounterID">
+                        <div v-if="counter && !counter.isArchived">
+                            <div v-if="user != null && selectedCounterID != ''">
+                                <div class="field">
+                                    <div class="control">
+                                        <textarea class="textarea" type="text" v-model="newMessage" :placeholder="placeholder()" @focus="focus()" :rows="rows"></textarea>
+                                    </div>
+                                </div>
+                                <div class="level">
+                                    <div class="level-left"></div>
+                                    <div class="field level-right" v-show="inEdit">
+                                        <div class="control level-item">
+                                            <button class="button" @click="submitMessage()">
+                                                <span class="icon" v-if="inSubmit">
+                                                    <i class="fa fa-spinner"></i>
+                                                </span>
+                                                <span>話しかける</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="selectedCounterID != '' &&  messages == null">
+                                <i class="fa fa-spinner fa-spin fa-3x fa-fw"></i>
+                                <span>前の客のコップ片付け中...</span>
+                            </div>
+                        </div>
+                        <div v-if="counter && counter.isArchived">
+                            {{ messageCountLimit }}件を超えましたので、このカウンターは閉店しました。
+                            <div v-if="messages && messages.length == 0">現在</div>
+                        </div>
+                        <div v-for="(message, i) in messages" :key="i" v-if="isShowMessage(message)">
+                            <hr class="hr">
+                            <article class="media">
+                                <div class="media-left">
+                                    <figure class="image is-16x16">
+                                        <img :src="message.user.photoURL" alt="avater" class="avater-16">
+                                    </figure>
+                                </div>
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p>
+                                            <strong>{{ message.user.displayName }}</strong>
+                                            <small>{{ moment(message.inserted).fromNow() }}</small>
+                                            <br>
+                                            <span v-html="formatMessage(message.value)"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="media-right">
+                                    <div class="dropdown is-right" :class="isOpenMessageOption == i? 'is-active': ''">
+                                        <div class="dropdown-triger">
+                                            <button class="button" aria-haspopup="true" :aia-controls="'dropdown-menu-' + i" @click.stop="isOpenMessageOption=(isOpenMessageOption==i)?null:i">
+                                                <span class="icon">
+                                                    <i class="fa fa-cog" aria-hidden></i>
+                                                </span>
+                                            </button>
+                                        </div>
+
+                                        <div class="dropdown-menu" :id="'dropdown-menu-' + i" role="menu">
+                                            <div class="dropdown-content">
+                                                <div class="dropdown-item">
+                                                    <p>
+                                                        <button class="button is-text" @click="mute(message.user.uid)" :disabled="user==null || message.user.uid==user.uid">
+                                                            明日までミュートする
+                                                        </button>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" :class="isOpenModal? 'is-active': ''">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">カウンターを追加</p>
+                    <button class="delete" aria-label="close" @click="isOpenModal=false"></button>
+                </header>
+                <section class="modal-card-body">
+                    <div class="field">
+                        <div class="control">
+                            <input class="input" type="text" v-model="newCounterName" placeholder="カウンター名">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <textarea class="textarea" type="text" v-model="newCounterDescription" placeholder="このカウンターの内容" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <label class="checkbox">
+                                <input type="checkbox" v-model="newCounterIsPrivate"> プライベートカウンター (URLを知ってるメンバーのみアクセス出来ます)
+                            </label>
+                        </div>
+                    </div>
+                </section>
+                <footer class="modal-card-foot">
+                    <button class="button is-success" @click="addCounter()" :disabled="!isEnableNewCounterButton">新規作成</button>
+                    <button class="button" @click="isOpenModal=false">キャンセル</button>
+                </footer>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        var kakuuchi = new Vue({
+            el: "#app",
+            data: {
+                user: null,
+                muteUsers: null,
+                counters: [],
+                messages: null,
+                selectedCounterID: "",
+                newMessage: "",
+                inSubmit: false,
+                inEdit: false,
+                rows: 1,
+                isOpenModal: false,
+                newCounterIsPrivate: false,
+                newCounterName: "",
+                newCounterDescription: "",
+
+
+                topPage: 0,
+                sandboxID: "",
+
+                searchWord: "",
+                searchedCounters: null,
+
+                isShowMessageInfo: null,
+
+                messageCountLimit: 999,
+
+                unsubscribeCounter: null,
+                unsubscribeUser: null,
+
+                isOpenSidebar: false,
+                isOpenMessageOption: null,
+                bulma: {},
+
+                bulmaTypes: ["isMobile", "isTablet", "isDesktop", "isWidescreen", "isFullHD"],
+
+                bulmaClasses: {
+                    isFlexTouch: [1, 1, 0, 0, 0],
+                    isFlexTablet: [0, 1, 1, 1, 1],
+                    isFlexDesktop: [0, 0, 1, 1, 1],
+                    isFlexWidescreen: [0, 0, 0, 1, 1],
+                    isFlexFullHD: [0, 0, 0, 0, 1],
+
+                    isHiddenMobile: [0, 1, 1, 1, 1],
+                    isHiddenTabletOnly: [1, 0, 1, 1, 1],
+                    isHiddenDesktopOly: [1, 1, 0, 1, 1],
+                    isHiddenWidescreenOnly: [1, 1, 1, 0, 1],
+
+                    isHiddenTouch: [0, 0, 1, 1, 1],
+                    isHiddenTablet: [1, 0, 0, 0, 0],
+                    isHiddenDesktop: [1, 1, 0, 0, 0],
+                    isHiddenWidescreen: [1, 1, 1, 0, 0],
+                    isHiddenFullHD: [1, 1, 1, 1, 0]
+                }
+            },
+            created() {
+                this.user = JSON.parse(localStorage.getItem("user"));
+                initFirebase();
+            },
+            mounted() {
+                this.$el.style.display = "block";
+
+                initApp(this, () => {
+
+                    if (this.user != null) {
+                        subscribeUser(this);
+                    }
+
+                    this.selectedCounterID = location.hash.replace("#", "");
+
+                });
+
+                this.bulma = null;
+                window.addEventListener("resize", () => {
+                    this.bulma = null;
+                });
+            },
+            watch: {
+                bulma() {
+                    if (this.bulma != null) { return; }
+
+                    let ret = {};
+                    const suffix = "Bulma";
+
+                    let isFullHD = true;
+                    for (const type of this.bulmaTypes) {
+
+                        const div = document.createElement("div");
+                        const klass = type.replace(/([A-Z])/, (m) => { return "-flex-" + m.toLowerCase(); });
+                        div.setAttribute("id", type + suffix);
+                        div.setAttribute("class", klass);
+                        this.$el.appendChild(div);
+
+                        const el = document.querySelector("#" + type + suffix);
+                        const style = window.getComputedStyle(div, null);
+                        ret[type] = false;
+                        if (style.display == "flex") {
+                            ret[type] = true;
+                            isFullHD = false;
+                        }
+
+                        el.remove();
+                    }
+                    ret["isFullHD"] = isFullHD;
+
+
+                    const size = this.bulmaTypes.indexOf(Object.keys(ret).filter((d) => { return ret[d] == true; })[0]);
+                    for (const klass in this.bulmaClasses) {
+                        ret[klass] = (this.bulmaClasses[klass][size] == 1) ? true : false;
+                    }
+
+                    this.bulma = ret;
+                    this.chnangedBulma();
+                },
+                counters() {
+                    let sandbox = this.counters.filter(d => { return d.name == "Sandbox"; });
+                    if (sandbox.length == 0) {
+                        this.newCounterName = "Sandbox";
+                        this.newCounterDescription = "お砂場";
+                        _addCounter(this);
+                    } else {
+                        this.sandboxID = sandbox[0].id;
+                    }
+                },
+                muteUsers() {
+                    if (this.muteUsers != null) {
+                        updateUserInfo(this);
+                    }
+                },
+                selectedCounterID() {
+                    this.isShowMessageInfo = null;
+                    _selectCounter(this);
+                    ga('set', 'dimension1', this.counter.name);
+                },
+                inSubmit(v) {
+                    if (this.selectedCounterID != "" && v) {
+                        _submitMessage(this);
+                    }
+                },
+                newMessage(message) {
+                    if (message == "") {
+                        this.rows = 1;
+                        this.inEdit = false;
+                    } else {
+                        this.rows = this.newMessage.split("\n").length;
+                        this.inEdit = true;
+                    }
+                }
+            },
+            computed: {
+                isEnableNewCounterButton() {
+                    return (this.newCounterName != "" && this.newCounterName != "Sandbox")
+                },
+                counter() {
+                    let counter = this.counters.filter(d => { return d.id == this.selectedCounterID; })[0];
+                    return counter;
+                },
+                participantImages() {
+                    let images = [this.counter.owner.photoURL];
+                    if (this.messages == null) { return images; }
+                    for (const message of this.messages) {
+                        const image = message.user.photoURL;
+                        if (images.indexOf(image) == -1) {
+                            images.push(image);
+                        }
+                    }
+                    return images;
+                },
+                muted() {
+                    if (this.muteUsers == null) {
+                        return [];
+                    }
+                    return this.muteUsers
+                        .filter(d => {
+                            return (new Date()) < d.expireTime && this.selectedCounterID == d.counterId;
+                        })
+                        .map(d => { return d.uid; });
+                }
+            },
+            methods: {
+                search() {
+                    _search(this);
+                },
+                searchReset() {
+                    this.searchWord = "";
+                    this.searchedCounters = null;
+                },
+                isShowCounter(counter, recent) {
+                    if (this.searchedCounters != null &&
+                        this.searchedCounters.indexOf(counter.id) == -1) {
+                        return false;
+                    }
+                    return counter.participant.indexOf(this.user.uid) > -1 == recent;
+                },
+                formatMessage(message) {
+                    return _formatMessage(message);
+                },
+                chnangedBulma() {
+                },
+                placeholder() {
+                    let s = [
+                        "最近調子どうよ？",
+                        "面白いことあります？",
+                        "景気上がらんね。",
+                        "あのニュース見ました？",
+                        "実は今無職なんですよ..."
+                    ];
+                    return s[Math.floor(Math.random() * (s.length - 1 + 1))];
+                },
+                isShowMessage(message) {
+                    return this.muted.indexOf(message.user.uid) == -1
+                },
+                mute(uid) {
+                    this.muteUsers.push({
+                        uid: uid,
+                        expireTime: moment().add(1, "days").toDate(),
+                        counterId: this.selectedCounterID
+                    });
+                },
+                toggleSidebar() {
+                    document.documentElement.scrollTop = 0;
+                    const el = document.querySelector(".sidebar");
+                    this.isOpenSidebar = (el.style.display == "none") ? true : false;
+                },
+                logoutAlert() {
+                    if (confirm("Are you sure you want to log out?") = true) { _logout(this); }
+                },
+                addCounter() {
+                    _addCounter(this);
+                },
+                openModal() {
+                    this.isOpenModal = true;
+                },
+                login() {
+                    _login(this);
+                },
+                logout() {
+                    _logout(this);
+                },
+                selectCounter(id) {
+                    this.selectedCounterID = id;
+
+                    if (this.bulma.isMobile) {
+                        this.isOpenSidebar = false;
+                    }
+                },
+                submitMessage() {
+                    this.inSubmit = true;
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

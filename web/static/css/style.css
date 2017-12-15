@@ -1,0 +1,46 @@
+body {
+    background-color: #F8F8F8;
+}
+.wrap {
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: 1rem;
+    padding-left: 1rem;
+    max-width: 800px;
+    background-color: white;
+}
+.main {
+    min-height: calc(100vh - 45px);
+}
+.sidebar {
+    width: 200px;
+    background-color: #F8F8F8;
+}
+.messages {
+    max-width: 600px;
+}
+.avater-32 {
+    border-radius: 16px;
+}
+.avater-24 {
+    border-radius: 12px;
+}
+.avater-16 {
+    border-radius: 8px;
+}
+.navbar {
+    display: flex;
+}
+.navwrap {
+    position: fixed;
+    top:0px;
+    left: 0;
+    right: 0;
+    height: 53px;
+    width: 100%;
+    z-index: 2;
+    opacity: 0.95;
+    padding: 0 10px;
+    border-bottom: 1px solid silver;
+    background-color: white;
+}

@@ -1,0 +1,24 @@
+image: golang:1.8.5-jessie
+
+before_script:
+  - echo "deb http://packages.cloud.google.com/apt cloud-sdk-jessie main" | tee /etc/apt/sources.list.d/google-cloud-sdk.list
+  - curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+  - apt-get update && apt-get -y install google-cloud-sdk google-cloud-sdk-app-engine-go
+  - go get cloud.google.com/go/firestore
+  - go get google.golang.org/appengine
+
+after_script:
+  - echo "GJ!"
+
+deploy_production:
+  stage: deploy
+  environment: Production
+  only:
+    - master
+  script:
+    - cd web
+    - echo $APPENGINE_KEY_FILE > appengine.json
+    - echo $FIREBASE_KEY_FILE > firebase.json
+    - gcloud auth activate-service-account --key-file appengine.json
+    - gcloud --quiet --project $APPENGINE_PROJECT_NAME app deploy
+    - gcloud --quiet --project $APPENGINE_PROJECT_NAME app deploy cron.yaml

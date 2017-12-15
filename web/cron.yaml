@@ -1,0 +1,7 @@
+cron:
+- description: createIndex
+  url: /cron/createIndex/
+  schedule: every 5 mins
+- description: createArchive
+  url: /cron/createArchive/
+  schedule: every 5 mins
