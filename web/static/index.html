@@ -44,8 +44,10 @@
                         </a>
                     </div>
                     <div class="level-item is-mobile">
+                        <img src="/favicon.png" class="image" :class="bulma.isMobile? 'is-24x24': 'is-32x32'">
                         <h1 :class="bulma.isMobile? 'is-size-5': 'is-size-3'">
-                            <a href="/" style="text-decoration: none;color: black">角打ち</a>
+                            <a href="/" style="text-decoration: none;color: black"> 角打ち
+                            </a>
                         </h1>
                     </div>
                 </div>
@@ -95,7 +97,7 @@
                         <div v-if="topPage==0">
 
                             <p>
-                                角打ちは2chのような古き良き掲示板を今時の技術や環境で再現しようとしているプロジェクトです。
+                                角打ちは2chのような古き良き掲示板を今時の技術や環境で構築しています。
                                 <br>出来るだけシンプルに楽な感じで利用できる場所を目指しています。
                             </p>
                             <p>
@@ -181,7 +183,8 @@
                                 <br>他に、ログイン処理周りはFirebase、HTML関係のホスティングとバッチ処理(アーカイブ化と全文検索用インデックス作成)についてはGAEのGo環境で稼働しています。
                             </p>
                             <p>
-                                ソースもGitLabで公開予定です。
+                                ソースは
+                                <a href="https://gitlab.com/nobuhito/kakuuchi/">GitLabで公開</a>しています。
                             </p>
                         </div>
                         <div v-if="topPage==2">
