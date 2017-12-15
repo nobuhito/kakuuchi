@@ -551,6 +551,7 @@
                         this.searchedCounters.indexOf(counter.id) == -1) {
                         return false;
                     }
+                    if (this.user == null) { return !recent; } // not login
                     return counter.participant.indexOf(this.user.uid) > -1 == recent;
                 },
                 formatMessage(message) {
