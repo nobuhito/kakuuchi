@@ -226,8 +226,8 @@
                         </div>
                     </div>
                     <div class="counter-info" v-if="selectedCounterID != ''">
-                        <h1 class="title" :class="isShowMessageInfo? 'is-size-2': 'is-size-4'">{{ counter.name }}</h1>
-                        <h2 class="subtitle" v-if="isShowMessageInfo">{{ counter.description }}</h2>
+                        <h1 class="title" :class="isShowMessageInfo? 'is-size-4': 'is-size-5'">{{ counter.name }}</h1>
+                        <h2 class="subtitle is-size-5" v-if="isShowMessageInfo">{{ counter.description }}</h2>
                         <div class="has-text-right" v-if="isShowMessageInfo">
                             <div>
                                 <strong>オーナー:</strong> {{ counter.owner.displayName }}
