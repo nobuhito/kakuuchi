@@ -200,5 +200,9 @@ function _formatMessage(message) {
     // http://www.din.or.jp/~ohzaki/perl.htm#httpURL
     let linkRegex = /(https?:\/\/[-_.!~*'()a-zA-Z0-9;\/?:@&=+$,%#]+)/g;
     message = message.replace(linkRegex, "<a href=\"$1\">$1</a>");
+
+    let lf = /\n/g;
+    message = message.replace(lf, "<br>");
+
     return message;
 }
